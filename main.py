@@ -1,4 +1,9 @@
+"""Record a live radio stream to file
+
+TODO: Handle ctrl+c even inside the thread
+"""
 import datetime
+import logging
 import threading
 import time
 from pathlib import Path
@@ -7,14 +12,28 @@ from xml.etree import ElementTree
 
 import click
 import requests
+from dateutil.parser import parse as dparse
 
 API_URL = "https://playerservices.streamtheworld.com/api/livestream"
 
 
+logging.basicConfig(
+    level="INFO",
+    format="%(asctime)s [%(name)s]: [%(levelname)s]: %(message)s",
+)
+
+
 @click.command()
+@click.option(
+    "--duration",
+    default="10 minutes",
+    show_default=True,
+)
 @click.argument("station", nargs=1, default="WQHTFM")
-@click.argument("duration", nargs=1, default=600)
 def main(station, duration):
+
+    dur = parse_duration(duration)
+    logging.debug(f"{duration} parsed as {dur}")
 
     params = {
         "station": station,
@@ -22,27 +41,42 @@ def main(station, duration):
         "version": "1.9",
     }
 
+    logging.info("Fetching hosts")
     r = requests.get(API_URL, params=params)
     r.raise_for_status()
 
     hosts = hq_server_hosts(r.content)
 
     date_str = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-
     out_pth = Path(f"{date_str}_{station}_{duration}.aac")
     stream_url = f"https://{hosts[0]}/{station}AAC.aac"
     stop_recording = threading.Event()
 
+    logging.info(f"Listening to {station} for {duration}. Will write to {out_pth}")
     download_thread = threading.Thread(
         target=stream_to_file,
         args=(stream_url, out_pth),
         kwargs={"event": stop_recording},
     )
 
+    # TODO - need to handle SIGINT, etc.
     download_thread.start()
-    time.sleep(duration)
+    time.sleep(dur.total_seconds())
     stop_recording.set()
     download_thread.join()
+
+    logging.info("Recording complete")
+
+
+def parse_duration(duration_str: str) -> datetime.timedelta:
+    """Turn a human duration string (e.g. '4 hours') into a timedelta
+
+    TODO: Surely there is a better way to do this? In pandas it would be
+    `to_timedelta()`, but pandas is way overkill for this project
+
+    """
+    midnight = dparse("00:00:00")
+    return dparse(duration_str) - midnight
 
 
 def stream_to_file(url: str, out_pth: Path, event: threading.Event = None):
