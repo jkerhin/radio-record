@@ -8,7 +8,7 @@ requests = "*"
 click = "*"
 #playsound = "*"
 yarl = "*"
-python-dateutil = "*"
+pytimeparse = "*"
 
 [dev-packages]
 pre-commit = "*"

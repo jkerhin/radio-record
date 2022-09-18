@@ -12,9 +12,10 @@ from xml.etree import ElementTree
 
 import click
 import requests
-from dateutil.parser import parse as dparse
+from pytimeparse.timeparse import timeparse
 
 API_URL = "https://playerservices.streamtheworld.com/api/livestream"
+API_VERSION = "1.9"
 
 
 logging.basicConfig(
@@ -32,13 +33,12 @@ logging.basicConfig(
 @click.argument("station", nargs=1, default="WQHTFM")
 def main(station, duration):
 
-    dur = parse_duration(duration)
-    logging.debug(f"{duration} parsed as {dur}")
+    dur = timeparse(duration)  # in seconds
 
     params = {
         "station": station,
         "transports": "http,hls,hlsts",
-        "version": "1.9",
+        "version": API_VERSION,
     }
 
     logging.info("Fetching hosts")
@@ -61,22 +61,11 @@ def main(station, duration):
 
     # TODO - need to handle SIGINT, etc.
     download_thread.start()
-    time.sleep(dur.total_seconds())
+    time.sleep(dur)
     stop_recording.set()
     download_thread.join()
 
     logging.info("Recording complete")
-
-
-def parse_duration(duration_str: str) -> datetime.timedelta:
-    """Turn a human duration string (e.g. '4 hours') into a timedelta
-
-    TODO: Surely there is a better way to do this? In pandas it would be
-    `to_timedelta()`, but pandas is way overkill for this project
-
-    """
-    midnight = dparse("00:00:00")
-    return dparse(duration_str) - midnight
 
 
 def stream_to_file(url: str, out_pth: Path, event: threading.Event = None):
@@ -92,7 +81,9 @@ def stream_to_file(url: str, out_pth: Path, event: threading.Event = None):
 
 def hq_server_hosts(document: str) -> List[str]:
     """Extract the URLs for the 44100 Hz streaming servers"""
-    xmlns = {"ns": "http://provisioning.streamtheworld.com/player/livestream-1.9"}
+    xmlns = {
+        "ns": f"http://provisioning.streamtheworld.com/player/livestream-{API_VERSION}"
+    }
 
     root = ElementTree.fromstring(document)
 
