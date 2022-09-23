@@ -1,10 +1,17 @@
 # Goals
 
+## Completed
+
  - [x] Find the right media server, connect
  - [x] Record streaming media to file
+
+ ## Dropped
  - [ ] Tag the recorded AAC file with date/time info
+    - Will be putting these on my phone, not burning to a CD, so "day-of" recording is good enough
  - [ ] Use wordlist to give distinct names to files/sessions/tracks
- - [ ] Strip out commercials (strech goal)
+    - Same as above, phone has much better UI than car stereo
+ - [ ] Strip out commercials (stretch goal)
+    - Solved by just... recording commercial-free mixes. There doesn't appear to be an obvious off-the-shelf "remove commercials from an audio stream" solution like there is for web ad blocking or text-to-speech
 
 # API Query
 
@@ -46,7 +53,7 @@ urls = [
 From some playing with cURL, it looks like all of the servers on "mountpoint 2" return
 the same stream. So now it's time to do my favorite thing in the world... XML parsing \s.
 
-Ok, not too bad, thankfully. Also looks like I don't need to worry about `request.preventCache` param...
+OK, not too bad, thankfully. Also looks like I don't need to worry about `request.preventCache` param...
 
 # The request itself
 
@@ -72,7 +79,7 @@ Query Params:
 
 # Thoughts
 
-I'm 99% certian I can pull the host from the API XML document
+I'm 99% certain I can pull the host from the API XML document
 
 Things that may make this effort more complicated:
   * If cookies/sessions are required (e.g. must run some javascript on the page)

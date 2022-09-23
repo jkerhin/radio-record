@@ -1,6 +1,11 @@
 """Record a live radio stream to file
 
-TODO: Handle ctrl+c even inside the thread
+I assumed that Hot 97.1 was owned by a massive media conglomerate and that this approach
+would be applicable to a lot of stations. As far as I can tell, WQHT is owned by
+"MediaCo Holding Inc.", which owns one other radio station and some billboards.
+
+Not going to invest more time into this project - it does what I needed and I can solve
+my needs without code.
 """
 import datetime
 import logging
@@ -30,8 +35,10 @@ logging.basicConfig(
     default="10 minutes",
     show_default=True,
 )
-@click.argument("station", nargs=1, default="WQHTFM")
+@click.argument("station", type=click.Choice(["WQHT", "WBLS"]), default="WQHT")
 def main(station, duration):
+
+    station = f"{station}FM"  # 'FM' required throughout the API
 
     dur = timeparse(duration)  # in seconds
 
